@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "607625038975",
+    "firebase_url": "https://dropme-6b037-default-rtdb.firebaseio.com",
+    "project_id": "dropme-6b037",
+    "storage_bucket": "dropme-6b037.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:607625038975:android:5bbb1608062b7e3098434a",
+        "android_client_info": {
+          "package_name": "com.example.filemanager"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgZh08LTkpOVOPH0eHUd8JJSwokufdcfI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:607625038975:android:f5b36d578d10936598434a",
+        "android_client_info": {
+          "package_name": "com.example.hyloi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgZh08LTkpOVOPH0eHUd8JJSwokufdcfI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
