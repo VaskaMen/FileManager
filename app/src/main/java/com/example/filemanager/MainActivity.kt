@@ -17,12 +17,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ContentTransform
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -30,6 +34,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.google.firebase.database.ChildEventListener
@@ -106,7 +111,7 @@ class MainActivity : ComponentActivity() {
                 val snapFile = it.getValue(SelectedFile::class.java)!!
 
                 if(passwordGlobal != ""){
-                    if (snapFile !in file.toList()){
+                    if (snapFile !in file.toList() && snapFile.size.isEmpty().not()){
                         file.add(snapFile)
                     }
                 }
@@ -132,11 +137,6 @@ class MainActivity : ComponentActivity() {
                     Text(text = "Отправить")
                 }
 
-                Button(onClick = {
-                    sendFile(fileData)
-                }) {
-                    Text(text = "Отправить")
-                }
 
                 Button(onClick = {
                     if (path == null)
@@ -150,7 +150,7 @@ class MainActivity : ComponentActivity() {
 
                 LazyColumn{
                     items(file) {
-                        Text(text = it.name)
+                        FileCard(it)
                     }
                 }
             }
@@ -182,24 +182,38 @@ fun getFilesFromStorage(callback: (DataSnapshot) -> Unit){
         }
 
         override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-            TODO("Not yet implemented")
+
         }
 
         override fun onChildRemoved(snapshot: DataSnapshot) {
-            TODO("Not yet implemented")
+
         }
 
         override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-            TODO("Not yet implemented")
+
         }
 
         override fun onCancelled(error: DatabaseError) {
-            TODO("Not yet implemented")
+
         }
 
     })
 }
 
+@Preview(showBackground = true)
+@Composable
+fun FileCard(file: SelectedFile = SelectedFile("Name", "jpg", "12342", "zxcasca")){
+    Column(modifier = Modifier.fillMaxWidth())
+    {
+        Text(text = file.name)
+        Row {
+            Text(text = file.type)
+            Text(text = "|")
+            Text(text = file.size)
+        }
+        Divider()
+    }
+}
 
 
 data class SelectedFile(
