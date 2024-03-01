@@ -17,25 +17,33 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ContentTransform
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.getValue
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import java.io.File
+
 
 
 val storageRef = Firebase.storage.reference
-val dbRef = Firebase
+val dbRef = FirebaseDatabase.getInstance().reference
 lateinit var context: Context
 lateinit var globalContentResolver: ContentResolver
 var passwordGlobal: String = ""
@@ -75,8 +83,9 @@ class MainActivity : ComponentActivity() {
                     val name = cursor.getString(fileName)
                     val type = cursor.getString(fileType)
                     val size = cursor.getString(fileSize)
+                    val path = "${passwordGlobal}/${name}"
 
-                    fileSelected = SelectedFile(name, type, size)
+                    fileSelected = SelectedFile(name, type, size, path)
                 }
 
                 fileData = contentResolver.openInputStream(it).use {
@@ -91,6 +100,17 @@ class MainActivity : ComponentActivity() {
                 path = it
             }
 
+            var file = remember{ mutableStateListOf<SelectedFile>()}
+
+            getFilesFromStorage {
+                val snapFile = it.getValue(SelectedFile::class.java)!!
+
+                if(passwordGlobal != ""){
+                    if (snapFile !in file.toList()){
+                        file.add(snapFile)
+                    }
+                }
+            }
 
             Column {
 
@@ -113,12 +133,25 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Button(onClick = {
+                    sendFile(fileData)
+                }) {
+                    Text(text = "Отправить")
+                }
+
+                Button(onClick = {
                     if (path == null)
                             launcherOpen.launch("FileName")
                     else
                         download(path!!, "${passwordGlobal}")
                 }) {
                     Text(text = "Скачать")
+                }
+
+
+                LazyColumn{
+                    items(file) {
+                        Text(text = it.name)
+                    }
                 }
             }
         }
@@ -137,11 +170,41 @@ fun download(path: Uri, pathRef: String){
 
 fun sendFile(byteArray: ByteArray){
     storageRef.child(passwordGlobal).child(fileSelected.name).putBytes(byteArray)
+
+    dbRef.child(passwordGlobal).push().setValue(fileSelected)
+}
+
+fun getFilesFromStorage(callback: (DataSnapshot) -> Unit){
+
+    dbRef.child(passwordGlobal).addChildEventListener(object : ChildEventListener{
+        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+            callback(snapshot)
+        }
+
+        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onChildRemoved(snapshot: DataSnapshot) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+            TODO("Not yet implemented")
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            TODO("Not yet implemented")
+        }
+
+    })
 }
 
 
+
 data class SelectedFile(
-    val name: String,
-    val type: String,
-    val size: String
+    val name: String = "",
+    val type: String = "",
+    val size: String = "",
+    val path: String = ""
 )
