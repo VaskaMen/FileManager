@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
             globalContentResolver = contentResolver
             context = applicationContext
 
-            val fileList = remember{ mutableStateListOf<SelectedFile>()}
+            var fileList = remember{ mutableStateListOf<SelectedFile>()}
 
             var password by remember {
                 mutableStateOf("")
@@ -99,7 +99,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            getFilesFromStorage(callback =  {
+            getFilesFromStorage(
+                callback =  {
                     val snapFile = it.getValue(SelectedFile::class.java)!!
 
                     if(passwordGlobal != ""){
@@ -116,7 +117,24 @@ class MainActivity : ComponentActivity() {
                             fileList.remove(snapFile)
                         }
                     }
-                })
+                },
+                callbackChanged = {
+                    val snapFile = it.getValue(SelectedFile::class.java)!!
+//                    val fileListTemp = fileList.toMutableList()
+//                    fileListTemp.forEach{
+//                        if (it.fileID == snapFile.fileID){
+//                            Toast.makeText(this@MainActivity, "${snapFile.fileID} + ${snapFile.loaded}", Toast.LENGTH_SHORT).show()
+//                        }
+//                    }
+                    for(ff in fileList.toMutableList()){
+                        if (ff.fileID == snapFile.fileID){
+                            fileList.set(fileList.indexOf(ff), snapFile)
+                            break
+                        }
+                    }
+
+                }
+                )
 
             Column {
                 TextField(value = password, onValueChange ={
@@ -166,5 +184,5 @@ data class SelectedFile(
     val type: String = "",
     val size: String = "",
     val path: String = "",
-    val loaded: Boolean = false
+    var loaded: Boolean = false
 )

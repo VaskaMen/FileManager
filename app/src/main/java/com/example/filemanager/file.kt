@@ -35,7 +35,9 @@ import java.text.DecimalFormat
 
 @Preview(showBackground = true)
 @Composable
-fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxcasca"), callback: () -> Unit = {}){
+fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxcasca"),
+             callback: () -> Unit = {}
+){
     val df = DecimalFormat("#.##")
     val sizeKB = df.format((file.size.toInt()/(1024)).toBigDecimal())
     val sizeMB = df.format(file.size.toInt()/(1024 * 1024))
@@ -57,12 +59,16 @@ fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxc
         else -> R.drawable.baseline_insert_drive_file_24
     }
 
+    var fileLoaded by remember {
+        mutableStateOf(file.loaded)
+    }
+
     Column(modifier = Modifier
         .fillMaxWidth()
         .background(color = if (fileIsCheked) Color.LightGray else Color.White)
     )
     {
-
+        Text(text = fileLoaded.toString())
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,15 +145,14 @@ fun sendFile(byteArray: ByteArray, fileSelected: SelectedFile?){
     }
 }
 
-fun getFilesFromStorage(callback: (DataSnapshot) -> Unit, callbackDelete: (DataSnapshot) -> Unit){
-    var snapList = arrayListOf<DataSnapshot>()
+fun getFilesFromStorage(callback: (DataSnapshot) -> Unit, callbackDelete: (DataSnapshot) -> Unit, callbackChanged: (DataSnapshot) -> Unit){
     dbRef.child(passwordGlobal).addChildEventListener(object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-            snapList.add(snapshot)
+            callback(snapshot)
         }
 
         override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-            snapList.add(snapshot)
+            callbackChanged(snapshot)
         }
 
         override fun onChildRemoved(snapshot: DataSnapshot) {
@@ -155,7 +160,6 @@ fun getFilesFromStorage(callback: (DataSnapshot) -> Unit, callbackDelete: (DataS
         }
 
         override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -163,8 +167,6 @@ fun getFilesFromStorage(callback: (DataSnapshot) -> Unit, callbackDelete: (DataS
         }
 
     })
-
-
 }
 
 fun deleteFile(fileSelected: SelectedFile){
