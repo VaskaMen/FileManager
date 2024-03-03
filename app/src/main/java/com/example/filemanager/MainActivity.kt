@@ -12,28 +12,38 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -41,8 +51,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.values
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-
-
 
 val storageRef = Firebase.storage.reference
 val dbRef = FirebaseDatabase.getInstance().reference
@@ -56,7 +64,6 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         setContent {
             globalContentResolver = contentResolver
@@ -133,28 +140,49 @@ class MainActivity : ComponentActivity() {
 
                 })
 
-            Column {
-                TextField(value = password, onValueChange ={
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colorResource(R.color.backGround))
+                    .padding(top = 30.dp)
+            )
+            {
+                TextField(value = password,
+                    colors = TextFieldDefaults.textFieldColors(
+                        containerColor = colorResource(R.color.lightBrown),
+                        focusedIndicatorColor = Color(0xFFC5B5B5)
+                    ),
+                    placeholder = { Text(text = "Имя папки")},
+                    onValueChange ={
                     password=it
                     passwordGlobal = it
                     fileList.clear()
                 } )
 
-                Button(onClick = {
+                Button(
+                    colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.lightBrown)),
+                    onClick = {
                     launcherSelect.launch("*/*")
                 }) {
                     Text(text = "Выбрать файл")
                 }
-                
-                Button(onClick = {
-                    if (passwordGlobal != "" && fileSelected.path != "")
-                        sendFile(fileData, fileSelected)
-                    else
-                        Toast.makeText(this@MainActivity, "Необходми указать путь сохранения и выбрать файл", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text(text = "Отправить")
-                }
 
+                if (fileSelected.path != ""){
+                    Column(horizontalAlignment = Alignment.CenterHorizontally){
+                        PreviewFile(fileSelected)
+                        Button(
+                            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.lightBrown)),
+                            onClick = {
+                                if (passwordGlobal != "" && fileSelected.path != "")
+                                    sendFile(fileData, fileSelected)
+                                else
+                                    Toast.makeText(this@MainActivity, "Необходми указать путь сохранения и выбрать файл", Toast.LENGTH_SHORT).show()
+                            }) {
+                            Text(text = "Отправить")
+                        }
+                    }
+                }
 
 
                 LazyColumn{
@@ -165,9 +193,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-
-
             }
         }
     }
 }
+
