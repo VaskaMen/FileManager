@@ -61,17 +61,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             globalContentResolver = contentResolver
             context = applicationContext
-
+//          Список файлов доступных для скачивания
             var fileList = remember{ mutableStateListOf<SelectedFile>()}
-
+//          ID хранилища
             var password by remember {
                 mutableStateOf("")
             }
-
+//          Информация о выбраном файле к отправке
             var fileSelected: SelectedFile by remember {
                 mutableStateOf(SelectedFile())
             }
-
+//          Разрешение на доступ к информации о файле
             val projection = arrayOf(
                 MediaStore.Files.FileColumns.DISPLAY_NAME,
                 MediaStore.Files.FileColumns.MIME_TYPE,
@@ -80,6 +80,9 @@ class MainActivity : ComponentActivity() {
 
 //            Отправка файла
             val launcherSelect = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()){ it ->
+                if (it == null)
+                    return@rememberLauncherForActivityResult
+//              Запрос доступа к файлу и получение инф о нём
                 contentResolver.query(it!!, projection, null, null)?.use { cursor ->
                     val fileName = cursor.getColumnIndex(MediaStore.Files.FileColumns.DISPLAY_NAME)
                     val fileType = cursor.getColumnIndex(MediaStore.Files.FileColumns.MIME_TYPE)
@@ -99,6 +102,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+//          Отслеживает и обновляет список файлов в хранилище
             getFilesFromStorage(
                 callback =  {
                     val snapFile = it.getValue(SelectedFile::class.java)!!
@@ -120,12 +124,6 @@ class MainActivity : ComponentActivity() {
                 },
                 callbackChanged = {
                     val snapFile = it.getValue(SelectedFile::class.java)!!
-//                    val fileListTemp = fileList.toMutableList()
-//                    fileListTemp.forEach{
-//                        if (it.fileID == snapFile.fileID){
-//                            Toast.makeText(this@MainActivity, "${snapFile.fileID} + ${snapFile.loaded}", Toast.LENGTH_SHORT).show()
-//                        }
-//                    }
                     for(ff in fileList.toMutableList()){
                         if (ff.fileID == snapFile.fileID){
                             fileList.set(fileList.indexOf(ff), snapFile)
@@ -133,8 +131,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                }
-                )
+                })
 
             Column {
                 TextField(value = password, onValueChange ={
@@ -150,10 +147,10 @@ class MainActivity : ComponentActivity() {
                 }
                 
                 Button(onClick = {
-                    if (passwordGlobal != "")
+                    if (passwordGlobal != "" && fileSelected.path != "")
                         sendFile(fileData, fileSelected)
                     else
-                        Toast.makeText(this@MainActivity, "Необходми указать путь сохранения", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity, "Необходми указать путь сохранения и выбрать файл", Toast.LENGTH_SHORT).show()
                 }) {
                     Text(text = "Отправить")
                 }
@@ -174,15 +171,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-
-
-data class SelectedFile(
-    val fileID: String = "",
-    val name: String = "",
-    val type: String = "",
-    val size: String = "",
-    val path: String = "",
-    var loaded: Boolean = false
-)

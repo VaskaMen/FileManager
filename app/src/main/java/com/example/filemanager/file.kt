@@ -1,6 +1,7 @@
 package com.example.filemanager
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,11 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,6 +36,15 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import java.text.DecimalFormat
 
+data class SelectedFile(
+    val fileID: String = "",
+    val name: String = "",
+    val type: String = "",
+    val size: String = "",
+    val path: String = "",
+    var loaded: Boolean = false
+)
+
 @Preview(showBackground = true)
 @Composable
 fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxcasca"),
@@ -43,14 +55,20 @@ fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxc
     val sizeMB = df.format(file.size.toInt()/(1024 * 1024))
     val sizeFormoted = if(sizeMB.toInt() == 0) sizeKB+" KB" else sizeMB +" MB"
 
+//    Файл загружен?
+    var failIsDownload by remember {
+        mutableStateOf(true)
+    }
+//    Выбор метста для файла и скачивание
     val launcherDownload = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument(
-        if(file == null) "*/*" else file!!.type)){ it ->
-        download(it!!, "${passwordGlobal}/${file?.path}")
-    }
-
-    var fileIsCheked by remember {
-        mutableStateOf(false)
+        if(file == null) "*/*" else file!!.type))
+    { it ->
+        failIsDownload = false
+        Log.e("Info", "${file?.path}")
+        download(it!!, "${file?.path}"){
+            failIsDownload = true
+        }
     }
 
     val fileIcon: Int = when(file.type){
@@ -59,16 +77,16 @@ fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxc
         else -> R.drawable.baseline_insert_drive_file_24
     }
 
-    var fileLoaded by remember {
-        mutableStateOf(file.loaded)
-    }
+    var fileLoaded = rememberUpdatedState(file.loaded)
+
 
     Column(modifier = Modifier
         .fillMaxWidth()
-        .background(color = if (fileIsCheked) Color.LightGray else Color.White)
     )
     {
-        Text(text = fileLoaded.toString())
+        if (fileLoaded.value.not() || failIsDownload.not())
+            LinearProgressIndicator()
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -82,9 +100,12 @@ fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxc
             Column(  modifier = Modifier.weight(2.7f))
             {
                 Button(
+                    enabled = fileLoaded.value,
                     onClick = {
-                        launcherDownload.launch(file.name)
-                        fileIsCheked = !fileIsCheked
+                        if (file.loaded)
+                            launcherDownload.launch(file.name)
+                        else
+                            Log.e("Load", "Файл не загружен")
                     }) {
 
                     Text(text = "Скачать")
@@ -124,8 +145,9 @@ fun FileCard(file: SelectedFile = SelectedFile("Name", "image/png", "8100", "zxc
 }
 
 
-fun download(path: Uri, pathRef: String){
-    storageRef.child(pathRef).getBytes(1024*1024).addOnSuccessListener {byte ->
+fun download(path: Uri, pathRef: String, onFileLoaded: () -> Unit){
+    storageRef.child(pathRef).getBytes(1024*1024*1024*1).addOnSuccessListener {byte ->
+        onFileLoaded()
         globalContentResolver.openOutputStream(path).use {
             it!!.write(byte)
         }
@@ -145,6 +167,7 @@ fun sendFile(byteArray: ByteArray, fileSelected: SelectedFile?){
     }
 }
 
+//Отслеживание состояния файла
 fun getFilesFromStorage(callback: (DataSnapshot) -> Unit, callbackDelete: (DataSnapshot) -> Unit, callbackChanged: (DataSnapshot) -> Unit){
     dbRef.child(passwordGlobal).addChildEventListener(object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
